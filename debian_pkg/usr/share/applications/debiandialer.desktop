@@ -1,6 +1,7 @@
 [Desktop Entry]
 Name=DebianDialer
-Exec=/usr/bin/debiandialer
+Exec=/usr/bin/debiandialer %u
 Icon=utilities-terminal
 Type=Application
 Categories=Utility;Telephony;
+MimeType=x-scheme-handler/tel;x-scheme-handler/callto;
