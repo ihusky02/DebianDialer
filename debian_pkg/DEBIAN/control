@@ -1,0 +1,8 @@
+Package: debiandialer
+Version: 2.0.0
+Section: utils
+Priority: optional
+Architecture: amd64
+Depends: pavucontrol, libice6, libsm6, libfontconfig1, libx11-6
+Maintainer: Stanisław Tlołka
+Description: DebianDialer - A professional IT solution for voice calls over Bluetooth HFP.

@@ -1,3 +1,4 @@
+using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using DebianDialer.Services;
@@ -12,7 +13,23 @@ public partial class MainWindowViewModel : ObservableObject
 
     public MainWindowViewModel()
     {
+        // Podpinamy się pod nowe zdarzenie z modemu
+        _ofono.IncomingCallReceived += OnIncomingCall;
         _ = _ofono.ConnectAsync();
+    }
+
+    private void OnIncomingCall(string number)
+    {
+        // 1. Wyświetlamy powiadomienie systemowe (Dymek w XFCE)
+        // -u critical sprawia, że powiadomienie nie zniknie zbyt szybko
+        ExecuteBash($"notify-send 'Ktoś dzwoni!' 'Numer: {number}' --icon=call-start -u critical");
+
+        // 2. Automatycznie wpisujemy numer dzwoniącego do okna dialera
+        // Ponieważ ten kod wykonuje się w tle, musimy użyć Dispatchera do aktualizacji UI
+        Dispatcher.UIThread.InvokeAsync(() =>
+        {
+            PhoneNumber = number;
+        });
     }
 
     [ObservableProperty]
@@ -40,7 +57,6 @@ public partial class MainWindowViewModel : ObservableObject
     [RelayCommand]
     private void EnableAudioBridge()
     {
-        // Dodano latency_msec=200, aby zredukować trzaski
         string micToPhone = "pactl load-module module-loopback latency_msec=200 source=@DEFAULT_SOURCE@ sink=$(pactl list short sinks | grep -i bluez | head -n 1 | awk '{print $2}')";
         string phoneToSpeaker = "pactl load-module module-loopback latency_msec=200 source=$(pactl list short sources | grep -i bluez | head -n 1 | awk '{print $2}') sink=@DEFAULT_SINK@";
 

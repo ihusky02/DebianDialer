@@ -4,28 +4,34 @@
         x:Class="DebianDialer.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Title="Debian Dialer"
-        Width="400" Height="620">
+        Width="400" Height="620"
+        TransparencyLevelHint="Transparent"
+        Background="Transparent">
 
-    <StackPanel Spacing="15" Margin="30" VerticalAlignment="Center">
-        <TextBlock Text="DebianDialer 2.0" HorizontalAlignment="Center" FontSize="26" FontWeight="Bold" Margin="0,0,0,10"/>
-        
-        <Grid ColumnDefinitions="*, Auto">
-            <TextBox Grid.Column="0" Text="{Binding PhoneNumber}" Watermark="Wpisz numer..." FontSize="18" Padding="10" />
-            <Button Grid.Column="1" Content="📖" Click="ImportVcf_Click" FontSize="18" Margin="10,0,0,0" Background="#8E24AA" Foreground="White" VerticalAlignment="Stretch" VerticalContentAlignment="Center" ToolTip.Tip="Importuj kontakty (.vcf)"/>
-        </Grid>
-        
-        <Button Content="Zadzwoń" Command="{Binding DialCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" FontSize="18" Padding="10" Background="#1E88E5" Foreground="White" />
-        <Button Content="Odbierz" Command="{Binding AnswerCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" FontSize="18" Padding="10" Background="#43A047" Foreground="White"/>
-        <Button Content="Odrzuć / Rozłącz" Command="{Binding HangupCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" FontSize="18" Padding="10" Background="#E53935" Foreground="White"/>
+    <!-- Używamy prostego, w 80% nieprzezroczystego ciemnego tła -->
+    <Panel Background="#CC222222">
 
-        <Separator Margin="0,5,0,5" Background="Gray"/>
-        <TextBlock Text="Kierowanie dźwięku (kliknij po odebraniu):" FontSize="12" Foreground="Gray" HorizontalAlignment="Center"/>
+        <StackPanel Spacing="15" Margin="30" VerticalAlignment="Center">
+            <TextBlock Text="DebianDialer 2.0" HorizontalAlignment="Center" FontSize="26" FontWeight="Bold" Margin="0,0,0,10" Foreground="White"/>
+            
+            <Grid ColumnDefinitions="*, Auto">
+                <TextBox Grid.Column="0" Text="{Binding PhoneNumber}" Watermark="Wpisz numer..." FontSize="18" Padding="10" />
+                <Button Grid.Column="1" Content="📖" Click="ImportVcf_Click" FontSize="18" Margin="10,0,0,0" Background="#8E24AA" Foreground="White" VerticalAlignment="Stretch" VerticalContentAlignment="Center" ToolTip.Tip="Importuj kontakty (.vcf)"/>
+            </Grid>
+            
+            <Button Content="Zadzwoń" Command="{Binding DialCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" FontSize="18" Padding="10" Background="#1E88E5" Foreground="White" />
+            <Button Content="Odbierz" Command="{Binding AnswerCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" FontSize="18" Padding="10" Background="#43A047" Foreground="White"/>
+            <Button Content="Odrzuć / Rozłącz" Command="{Binding HangupCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" FontSize="18" Padding="10" Background="#E53935" Foreground="White"/>
 
-        <Grid ColumnDefinitions="*, *">
-            <Button Grid.Column="0" Content="🔊 Włącz PC Audio" Command="{Binding EnableAudioBridgeCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="0,0,5,0" FontSize="14" Padding="10" Background="#FB8C00" Foreground="White" ToolTip.Tip="Przełącza dźwięk na mikrofon i głośniki komputera"/>
-            <Button Grid.Column="1" Content="🔇 Wyłącz PC Audio" Command="{Binding DisableAudioBridgeCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="5,0,0,0" FontSize="14" Padding="10" Background="#757575" Foreground="White" ToolTip.Tip="Zwraca dźwięk do telefonu i rozłącza mostek"/>
-        </Grid>
+            <Separator Margin="0,5,0,5" Background="#55FFFFFF"/>
+            <TextBlock Text="Kierowanie dźwięku (kliknij po odebraniu):" FontSize="12" Foreground="#DDDDDD" HorizontalAlignment="Center"/>
 
-        <Button Content="🎛 Systemowy Mikser Dźwięku" Command="{Binding OpenSoundSettingsCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" FontSize="14" Padding="10" Background="#546E7A" Foreground="White" Margin="0,10,0,0"/>
-    </StackPanel>
+            <Grid ColumnDefinitions="*, *">
+                <Button Grid.Column="0" Content="🔊 Włącz PC Audio" Command="{Binding EnableAudioBridgeCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="0,0,5,0" FontSize="14" Padding="10" Background="#FB8C00" Foreground="White" ToolTip.Tip="Przełącza dźwięk na mikrofon i głośniki komputera"/>
+                <Button Grid.Column="1" Content="🔇 Wyłącz PC Audio" Command="{Binding DisableAudioBridgeCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="5,0,0,0" FontSize="14" Padding="10" Background="#757575" Foreground="White" ToolTip.Tip="Zwraca dźwięk do telefonu i rozłącza mostek"/>
+            </Grid>
+
+            <Button Content="🎛 Systemowy Mikser Dźwięku" Command="{Binding OpenSoundSettingsCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" FontSize="14" Padding="10" Background="#546E7A" Foreground="White" Margin="0,10,0,0"/>
+        </StackPanel>
+    </Panel>
 </Window>
