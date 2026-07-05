@@ -28,23 +28,21 @@ public partial class MainWindowViewModel : ObservableObject
     private async Task Hangup()
     {
         await _ofono.HangupAsync();
-        DisableAudioBridge(); // Automatycznie wyłączamy nasłuch przy rozłączeniu
+        DisableAudioBridge();
     }
 
     [RelayCommand]
     private void OpenSoundSettings()
     {
-        try { Process.Start(new ProcessStartInfo { FileName = "pavucontrol", UseShellExecute = true }); } catch { }
+        ExecuteBash("pavucontrol");
     }
 
     [RelayCommand]
     private void EnableAudioBridge()
     {
-        // 1. Z mikrofonu PC do Telefonu (rozmówca nas słyszy)
-        string micToPhone = "pactl load-module module-loopback source=@DEFAULT_SOURCE@ sink=$(pactl list short sinks | grep -i bluez | head -n 1 | awk '{print $2}')";
-        
-        // 2. Z Telefonu na głośniki PC (my słyszymy rozmówcę)
-        string phoneToSpeaker = "pactl load-module module-loopback source=$(pactl list short sources | grep -i bluez | head -n 1 | awk '{print $2}') sink=@DEFAULT_SINK@";
+        // Dodano latency_msec=200, aby zredukować trzaski
+        string micToPhone = "pactl load-module module-loopback latency_msec=200 source=@DEFAULT_SOURCE@ sink=$(pactl list short sinks | grep -i bluez | head -n 1 | awk '{print $2}')";
+        string phoneToSpeaker = "pactl load-module module-loopback latency_msec=200 source=$(pactl list short sources | grep -i bluez | head -n 1 | awk '{print $2}') sink=@DEFAULT_SINK@";
 
         ExecuteBash(micToPhone);
         ExecuteBash(phoneToSpeaker);
@@ -53,19 +51,22 @@ public partial class MainWindowViewModel : ObservableObject
     [RelayCommand]
     private void DisableAudioBridge()
     {
-        // Usuwa wszystkie wirtualne mostki dźwiękowe
         ExecuteBash("pactl unload-module module-loopback");
     }
 
     private void ExecuteBash(string command)
     {
-        Process.Start(new ProcessStartInfo
+        try
         {
-            FileName = "bash",
-            Arguments = $"-c \"{command}\"",
-            RedirectStandardOutput = true,
-            UseShellExecute = false,
-            CreateNoWindow = true
-        });
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = "bash",
+                Arguments = $"-c \"{command}\"",
+                RedirectStandardOutput = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            });
+        }
+        catch { }
     }
 }
