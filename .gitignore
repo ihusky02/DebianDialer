@@ -3,3 +3,4 @@ obj/
 *.deb
 .DS_Store
 *.userprefs
+publish/
