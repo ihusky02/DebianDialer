@@ -3,8 +3,8 @@ using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
 using DebianDialer.Models;
 using DebianDialer.ViewModels;
+using DebianDialer.Services;
 using System;
-using System.Collections.Generic;
 using System.IO;
 
 namespace DebianDialer.Views;
@@ -14,30 +14,32 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
-        var vm = new MainWindowViewModel();
+        
+        var ofonoClient = new OfonoClient();
+        var vm = new MainWindowViewModel(ofonoClient);
         DataContext = vm;
 
-        // Odbieranie numeru telefonu z zewnątrz (np. od Evolution)
         var args = Environment.GetCommandLineArgs();
-        if (args.Length > 1)
+        
+        // --- Obsługa uruchamiania w tle (Autostart) ---
+        if (Array.Exists(args, arg => arg == "--hidden"))
         {
-            // Drugi argument (args[1]) to przysłany link
+            WindowState = WindowState.Minimized;
+            // Odkomentuj poniższą linię, jeśli chcesz, żeby aplikacja nie wyświetlała się w ogóle na pasku zadań (wymaga ikonki w zasobniku)
+            // ShowInTaskbar = false; 
+        }
+
+        // --- Obsługa linków telefonicznych (np. z klienta poczty) ---
+        if (args.Length > 1 && args[1] != "--hidden")
+        {
             string input = args[1];
             
-            // Czyszczenie prefiksów
             if (input.StartsWith("tel://", StringComparison.OrdinalIgnoreCase)) input = input.Substring(6);
             else if (input.StartsWith("tel:", StringComparison.OrdinalIgnoreCase)) input = input.Substring(4);
             else if (input.StartsWith("callto:", StringComparison.OrdinalIgnoreCase)) input = input.Substring(7);
 
-            // Usuwamy spacje i myślniki, zostawiamy plus (np. +48)
             input = input.Replace(" ", "").Replace("-", "");
-            
-            // Wpisujemy numer do interfejsu
             vm.PhoneNumber = input;
-            
-            // UWAGA: Jeśli chcesz, aby po kliknięciu w Evolution aplikacja 
-            // nie tylko wpisała numer, ale OD RAZU dzwoniła, odkomentuj linię poniżej:
-            // vm.DialCommand.Execute(null);
         }
     }
 
@@ -55,7 +57,11 @@ public partial class MainWindow : Window
         if (files.Count >= 1)
         {
             var filePath = files[0].Path.LocalPath;
-            var contacts = ParseVcf(filePath);
+            
+            // Używamy naszej przetestowanej klasy do VCF
+            var lines = File.ReadAllLines(filePath);
+            var parser = new VcfParser();
+            var contacts = parser.ParseLines(lines);
 
             if (contacts.Count > 0)
             {
@@ -68,31 +74,5 @@ public partial class MainWindow : Window
                 }
             }
         }
-    }
-
-    private List<Contact> ParseVcf(string filePath)
-    {
-        var contacts = new List<Contact>();
-        try
-        {
-            Contact? current = null;
-            foreach (var line in File.ReadLines(filePath))
-            {
-                if (line.StartsWith("BEGIN:VCARD")) current = new Contact();
-                else if (line.StartsWith("FN:") && current != null) current.Name = line.Substring(3);
-                else if (line.StartsWith("TEL") && current != null)
-                {
-                    var parts = line.Split(':');
-                    if (parts.Length > 1) current.PhoneNumber = parts[1];
-                }
-                else if (line.StartsWith("END:VCARD") && current != null)
-                {
-                    if (!string.IsNullOrEmpty(current.PhoneNumber)) contacts.Add(current);
-                    current = null;
-                }
-            }
-        }
-        catch (Exception) { }
-        return contacts;
     }
 }

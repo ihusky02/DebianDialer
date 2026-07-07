@@ -22,7 +22,7 @@ public interface IVoiceCall : IDBusObject
     Task AnswerAsync();
 }
 
-public class OfonoClient
+public class OfonoClient : IOfonoClient
 {
     private const string ServiceName = "org.ofono";
     private const string ModemPath = "/hfp/org/bluez/hci0/dev_48_EF_1C_C6_06_5F"; // Zmień jeśli zmienił się adres MAC Twojego telefonu

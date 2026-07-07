@@ -15,6 +15,11 @@
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.1" />
     <PackageReference Include="FluentAvaloniaUI" Version="2.1.0" />
     <!-- Używamy przyjaznej wersji biblioteki: -->
-    <PackageReference Include="Tmds.DBus" Version="0.20.0" />
+    <PackageReference Include="Tmds.DBus" Version="0.94.2" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Remove="DebianDialer.Tests/**" />
+    <EmbeddedResource Remove="DebianDialer.Tests/**" />
+    <None Remove="DebianDialer.Tests/**" />
   </ItemGroup>
 </Project>
