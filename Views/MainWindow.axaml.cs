@@ -21,15 +21,6 @@ public partial class MainWindow : Window
 
         var args = Environment.GetCommandLineArgs();
         
-        // --- Obsługa uruchamiania w tle (Autostart) ---
-        if (Array.Exists(args, arg => arg == "--hidden"))
-        {
-            WindowState = WindowState.Minimized;
-            // Odkomentuj poniższą linię, jeśli chcesz, żeby aplikacja nie wyświetlała się w ogóle na pasku zadań (wymaga ikonki w zasobniku)
-            // ShowInTaskbar = false; 
-        }
-
-        // --- Obsługa linków telefonicznych (np. z klienta poczty) ---
         if (args.Length > 1 && args[1] != "--hidden")
         {
             string input = args[1];
@@ -40,6 +31,18 @@ public partial class MainWindow : Window
 
             input = input.Replace(" ", "").Replace("-", "");
             vm.PhoneNumber = input;
+        }
+    }
+
+    // --- NAPRAWA AUTOSTARTU ---
+    // Ta funkcja odpala się dopiero, gdy system operacyjny "zauważy" nasze okno
+    protected override void OnOpened(EventArgs e)
+    {
+        base.OnOpened(e);
+        var args = Environment.GetCommandLineArgs();
+        if (Array.Exists(args, arg => arg == "--hidden"))
+        {
+            WindowState = WindowState.Minimized;
         }
     }
 
@@ -57,8 +60,6 @@ public partial class MainWindow : Window
         if (files.Count >= 1)
         {
             var filePath = files[0].Path.LocalPath;
-            
-            // Używamy naszej przetestowanej klasy do VCF
             var lines = File.ReadAllLines(filePath);
             var parser = new VcfParser();
             var contacts = parser.ParseLines(lines);
