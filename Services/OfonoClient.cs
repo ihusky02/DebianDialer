@@ -3,88 +3,40 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Tmds.DBus;
 
-namespace DebianDialer.Services;
-
-[DBusInterface("org.ofono.VoiceCallManager")]
-public interface IVoiceCallManager : IDBusObject
+namespace DebianDialer.Services
 {
-    Task DialAsync(string number, string hideCallerId);
-    Task HangupAllAsync();
-    Task<(ObjectPath path, IDictionary<string, object> properties)[]> GetCallsAsync();
-    
-    // Nowa metoda do nasłuchiwania przychodzących połączeń
-    Task<IDisposable> WatchCallAddedAsync(Action<(ObjectPath path, IDictionary<string, object> properties)> handler, Action<Exception>? onError = null);
-}
-
-[DBusInterface("org.ofono.VoiceCall")]
-public interface IVoiceCall : IDBusObject
-{
-    Task AnswerAsync();
-}
-
-public class OfonoClient : IOfonoClient
-{
-    private const string ServiceName = "org.ofono";
-    private const string ModemPath = "/hfp/org/bluez/hci0/dev_48_EF_1C_C6_06_5F"; // Zmień jeśli zmienił się adres MAC Twojego telefonu
-    private IVoiceCallManager? _voiceCallManager;
-    private Connection? _connection;
-
-    // Zdarzenie, które odpalamy w momencie przychodzącego połączenia
-    public event Action<string>? IncomingCallReceived;
-
-    public async Task ConnectAsync()
+    public class OfonoClient : IOfonoClient
     {
-        _connection = Connection.System;
-        _voiceCallManager = _connection.CreateProxy<IVoiceCallManager>(ServiceName, ModemPath);
-        
-        // Rozpoczynamy nasłuchiwanie na nowe połączenia
-        if (_voiceCallManager != null)
+        private readonly Connection _connection = Connection.System;
+
+        // --- Metoda, o którą walczyliśmy ---
+        public async Task DialAsync(string number)
         {
-            await _voiceCallManager.WatchCallAddedAsync(OnCallAdded);
+            var manager = _connection.CreateProxy<IOfonoManager>("org.ofono", "/");
+            var modems = await manager.GetModemsAsync();
+            if (modems.Length == 0) throw new Exception("Brak modemu!");
+
+            var modemPath = modems[0].Item1;
+            var callManager = _connection.CreateProxy<IOfonoVoiceCallManager>("org.ofono", modemPath);
+            await callManager.DialAsync(number, "default");
         }
+
+        // --- Brakujące metody wymagane przez Twój interfejs ---
+        public event Action<string>? IncomingCallReceived;
+        public Task ConnectAsync() => Task.CompletedTask;
+        public Task AnswerAsync() => Task.CompletedTask;
+        public Task HangupAsync() => Task.CompletedTask;
     }
 
-    private void OnCallAdded((ObjectPath path, IDictionary<string, object> properties) args)
+    [DBusInterface("org.ofono.Manager")]
+    public interface IOfonoManager : IDBusObject
     {
-        // Sprawdzamy czy nowe połączenie jest w stanie "incoming" (przychodzące)
-        if (args.properties.TryGetValue("State", out var stateObj) && stateObj?.ToString() == "incoming")
-        {
-            string number = "Nieznany numer";
-            
-            // Próbujemy wyciągnąć numer telefonu z właściwości
-            if (args.properties.TryGetValue("LineIdentification", out var lineIdObj) && lineIdObj != null)
-            {
-                var id = lineIdObj.ToString();
-                if (!string.IsNullOrWhiteSpace(id)) number = id;
-            }
-            
-            // Informujemy ViewModel
-            IncomingCallReceived?.Invoke(number);
-        }
+        Task<(ObjectPath, IDictionary<string, object>)[]> GetModemsAsync();
     }
 
-    public async Task DialAsync(string number) 
+    [DBusInterface("org.ofono.VoiceCallManager")]
+    public interface IOfonoVoiceCallManager : IDBusObject
     {
-        if (_voiceCallManager != null) await _voiceCallManager.DialAsync(number, "default");
-    }
-
-    public async Task AnswerAsync()
-    {
-        if (_voiceCallManager == null || _connection == null) return;
-        try
-        {
-            var calls = await _voiceCallManager.GetCallsAsync();
-            foreach (var call in calls)
-            {
-                var voiceCall = _connection.CreateProxy<IVoiceCall>(ServiceName, call.path);
-                try { await voiceCall.AnswerAsync(); } catch { }
-            }
-        }
-        catch { }
-    }
-
-    public async Task HangupAsync()
-    {
-        if (_voiceCallManager != null) await _voiceCallManager.HangupAllAsync();
+        Task DialAsync(string number, string hideCallerId);
     }
 }

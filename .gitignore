@@ -1,4 +1,5 @@
 bin/
 obj/
-.vs/
-*.user
+*.deb
+.DS_Store
+*.userprefs

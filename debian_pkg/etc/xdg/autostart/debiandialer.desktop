@@ -3,6 +3,6 @@ Type=Application
 Name=DebianDialer
 Comment=Czuwa w tle na połączenia telefoniczne
 Exec=/usr/lib/debiandialer/DebianDialer --hidden
-Icon=call-start
+Icon=debiandialer
 Terminal=false
 Categories=Network;Telephony;
