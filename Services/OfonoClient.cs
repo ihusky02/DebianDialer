@@ -13,8 +13,45 @@ namespace DebianDialer.Services
         public event Action<string>? IncomingCallReceived;
 
         public Task ConnectAsync() => Task.CompletedTask;
-        public Task AnswerAsync() => Task.CompletedTask;
-        public Task HangupAsync() => Task.CompletedTask;
+
+        // Prawdziwa metoda ODBIERANIA
+        public async Task AnswerAsync()
+        {
+            var manager = _connection.CreateProxy<IOfonoManager>("org.ofono", "/");
+            var modems = await manager.GetModemsAsync();
+            if (modems.Length == 0) return;
+
+            var modemPath = modems[0].Item1;
+            var callManager = _connection.CreateProxy<IOfonoVoiceCallManager>("org.ofono", modemPath);
+            
+            // Pobieramy listę wszystkich aktualnych połączeń
+            var calls = await callManager.GetCallsAsync();
+            foreach (var call in calls)
+            {
+                // Szukamy tego, które właśnie dzwoni ("incoming")
+                if (call.properties.TryGetValue("State", out var stateObj) && stateObj.ToString() == "incoming")
+                {
+                    // Łączymy się z tym konkretnym połączeniem i odbieramy
+                    var voiceCall = _connection.CreateProxy<IOfonoVoiceCall>("org.ofono", call.path);
+                    await voiceCall.AnswerAsync();
+                    break;
+                }
+            }
+        }
+
+        // Prawdziwa metoda ROZŁĄCZANIA / ODRZUCANIA
+        public async Task HangupAsync()
+        {
+            var manager = _connection.CreateProxy<IOfonoManager>("org.ofono", "/");
+            var modems = await manager.GetModemsAsync();
+            if (modems.Length == 0) return;
+
+            var modemPath = modems[0].Item1;
+            var callManager = _connection.CreateProxy<IOfonoVoiceCallManager>("org.ofono", modemPath);
+            
+            // Komenda HangupAll kończy wszystkie aktywne i dzwoniące rozmowy
+            await callManager.HangupAllAsync();
+        }
 
         public async Task DialAsync(string number)
         {
@@ -38,20 +75,20 @@ namespace DebianDialer.Services
                 var modemPath = modems[0].Item1;
                 var callManager = _connection.CreateProxy<IOfonoVoiceCallManager>("org.ofono", modemPath);
 
-                // Subskrypcja sygnału CallAdded na odpowiednim interfejsie
                 await callManager.WatchCallAddedAsync(
                     handler: e => 
                     {
-                        // e.path to ścieżka do nowego połączenia
-                        Process.Start("notify-send", "\"DebianDialer\" \"Wykryto przychodzące połączenie!\"");
+                        // Wyciągamy numer telefonu z metadanych połączenia oFono
+                        string number = "Nieznany";
+                        if (e.properties.TryGetValue("LineIdentification", out var idObj))
+                        {
+                            number = idObj.ToString() ?? "Nieznany";
+                        }
                         
-                        // Wykorzystujemy zdarzenie, by pozbyć się ostrzeżenia kompilatora
-                        IncomingCallReceived?.Invoke("Przychodzące połączenie!");
+                        // Przekazujemy prawdziwy numer do ViewModelu!
+                        IncomingCallReceived?.Invoke(number);
                     },
-                    onError: ex => 
-                    {
-                        Console.WriteLine($"Błąd nasłuchiwania D-Bus: {ex.Message}");
-                    }
+                    onError: ex => Console.WriteLine($"Błąd nasłuchiwania: {ex.Message}")
                 );
             }
             catch (Exception ex)
@@ -71,8 +108,19 @@ namespace DebianDialer.Services
     public interface IOfonoVoiceCallManager : IDBusObject
     {
         Task DialAsync(string number, string hideCallerId);
+        Task HangupAllAsync();
         
-        // Właściwa deklaracja sygnału dla Tmds.DBus
+        // Zwraca listę aktywnych połączeń
+        Task<(ObjectPath path, IDictionary<string, object> properties)[]> GetCallsAsync();
+        
         Task<IDisposable> WatchCallAddedAsync(Action<(ObjectPath path, IDictionary<string, object> properties)> handler, Action<Exception>? onError = null);
+    }
+
+    // Dodajemy nowy interfejs do obsługi konkretnego połączenia (odebranie)
+    [DBusInterface("org.ofono.VoiceCall")]
+    public interface IOfonoVoiceCall : IDBusObject
+    {
+        Task AnswerAsync();
+        Task HangupAsync();
     }
 }

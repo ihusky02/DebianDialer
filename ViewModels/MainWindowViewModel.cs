@@ -16,6 +16,13 @@ public partial class MainWindowViewModel : ObservableObject
         _ofono = ofono;
         _ofono.IncomingCallReceived += OnIncomingCall;
         _ = _ofono.ConnectAsync();
+
+        // --- KLUCZOWA ZMIANA: Uruchomienie nasłuchiwania w oFono ---
+        // Rzutujemy bezpiecznie na OfonoClient, aby ominąć ewentualne braki w interfejsie
+        if (_ofono is OfonoClient client)
+        {
+            _ = client.StartListeningAsync();
+        }
     }
 
     private void OnIncomingCall(string number)
@@ -42,8 +49,9 @@ public partial class MainWindowViewModel : ObservableObject
 
     // --- PRZYWRÓCONE KOMENDY AUDIO ---
 
+    
     [RelayCommand]
-    private void EnableAudioBridge() => ExecuteBash("pactl load-module module-loopback");
+private void EnableAudioBridge() => ExecuteBash("pactl load-module module-loopback latency_msec=200");
 
     [RelayCommand]
     private void DisableAudioBridge() => ExecuteBash("pactl unload-module module-loopback");
