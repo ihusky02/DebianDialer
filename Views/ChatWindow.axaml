@@ -1,0 +1,94 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:DebianDialer.ViewModels"
+        x:Class="DebianDialer.Views.ChatWindow"
+        x:DataType="vm:ChatWindowViewModel"
+        Title="{Binding ContactName, StringFormat='Czat: {0}'}"
+        Width="400" Height="500">
+
+    <!-- TWOJA TAPETA -->
+    <Window.Background>
+        <!-- Upewnij się, że masz plik chat_bg.jpg w folderze Assets -->
+        <ImageBrush Source="/Assets/chat_bg.jpg" Stretch="UniformToFill" />
+    </Window.Background>
+
+    <Grid RowDefinitions="Auto, *, Auto">
+        
+        <!-- SZKLANY Przycisk ładowania historii -->
+        <Button Grid.Row="0" Content="⬆ Załaduj starsze wiadomości ⬆" 
+                Command="{Binding LoadOlderMessagesCommand}"
+                IsVisible="{Binding CanLoadMore}"
+                HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                Background="#80FFFFFF" Foreground="Black" Margin="10,10,10,0"
+                BorderBrush="#4DFFFFFF" BorderThickness="1" CornerRadius="10"/>
+
+        <ListBox x:Name="ChatListBox" Grid.Row="1" ItemsSource="{Binding ChatMessages}" 
+                 Background="Transparent" BorderThickness="0" Margin="10">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <Grid>
+                        <!-- SZKLANY Dymek Odbiorcy (Lewa strona) -->
+                        <Border Background="#B3FFFFFF" 
+                                BorderBrush="#4DFFFFFF" 
+                                BorderThickness="1" 
+                                CornerRadius="15" Padding="12,8" 
+                                Margin="0,5,50,5" HorizontalAlignment="Left"
+                                IsVisible="{Binding IsIncoming}"
+                                BoxShadow="0 4 10 0 #40000000"> 
+                            <TextBlock Text="{Binding Text}" Foreground="Black" TextWrapping="Wrap" />
+                        </Border>
+                        
+                        <!-- SZKLANY Dymek Twój (Prawa strona) -->
+                        <!-- Półprzezroczysty niebieski -->
+                        <Border Background="#B31976D2" 
+                                BorderBrush="#4DFFFFFF" 
+                                BorderThickness="1"
+                                CornerRadius="15" Padding="12,8" 
+                                Margin="50,5,0,5" HorizontalAlignment="Right"
+                                IsVisible="{Binding IsOutgoing}"
+                                BoxShadow="0 4 10 0 #40000000">
+                            <TextBlock Text="{Binding Text}" Foreground="White" TextWrapping="Wrap" />
+                        </Border>
+                    </Grid>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+
+       <!-- SZKLANY Panel wpisywania wiadomości na dole -->
+        <Border Grid.Row="2" Background="#B3FFFFFF" BorderBrush="#4DFFFFFF" BorderThickness="1" 
+                Padding="10" CornerRadius="15" Margin="10" BoxShadow="0 -2 10 0 #33000000">
+            <Grid ColumnDefinitions="*, Auto">
+                
+                <!-- Obejście na ciemny motyw Avalonii: Szklane tło daje Border, a TextBox jest przezroczysty -->
+                <Border Grid.Column="0" Background="#80FFFFFF" CornerRadius="10" BorderBrush="#33000000" BorderThickness="1">
+                    
+                    <TextBox Text="{Binding NewMessageText}" 
+                             PlaceholderText="Wpisz wiadomość..." 
+                             AcceptsReturn="True" MaxHeight="100" 
+                             Background="Transparent" 
+                             Foreground="Black" 
+                             CaretBrush="Black"
+                             BorderThickness="0" 
+                             KeyDown="TextBox_KeyDown">
+                             
+                        <!-- Ten blok wymusza przezroczystość nawet, gdy klikniesz w pole -->
+                        <TextBox.Styles>
+                            <Style Selector="TextBox:pointerover /template/ Border#PART_BorderElement">
+                                <Setter Property="Background" Value="Transparent" />
+                            </Style>
+                            <Style Selector="TextBox:focus /template/ Border#PART_BorderElement">
+                                <Setter Property="Background" Value="Transparent" />
+                                <Setter Property="BorderThickness" Value="0" />
+                            </Style>
+                        </TextBox.Styles>
+                        
+                    </TextBox>
+                </Border>
+                
+                <!-- Przycisk wysyłania -->
+                <Button Grid.Column="1" Content="Wyślij" Command="{Binding SendMessageAsync}" 
+                        Background="#1976D2" Foreground="White" Margin="10,0,0,0" VerticalAlignment="Bottom" CornerRadius="10"/>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

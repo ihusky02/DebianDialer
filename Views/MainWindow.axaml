@@ -3,35 +3,139 @@
         xmlns:vm="using:DebianDialer.ViewModels"
         x:Class="DebianDialer.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
-        Title="Debian Dialer"
-        Width="400" Height="620"
-        TransparencyLevelHint="Transparent"
-        Background="Transparent">
+        Title="DebianDialer"
+        Width="400" Height="600"
+        TransparencyLevelHint="None"
+        Background="#E0F2F1"
+        ExtendClientAreaToDecorationsHint="True">
 
-    <!-- Używamy prostego, w 80% nieprzezroczystego ciemnego tła -->
-    <Panel Background="#CC222222">
+    <Window.Styles>
+        <Style Selector="TextBlock">
+            <Setter Property="Foreground" Value="Black" />
+        </Style>
+        <Style Selector="TextBox">
+            <Setter Property="Background" Value="#CCFFFFFF" />
+            <Setter Property="Foreground" Value="Black" />
+        </Style>
+        <Style Selector="TabItem">
+            <Setter Property="Foreground" Value="Black" />
+        </Style>
+        <Style Selector="Button">
+            <Setter Property="Foreground" Value="Black" />
+        </Style>
+        <Style Selector="ListBoxItem">
+            <Setter Property="Foreground" Value="Black" />
+        </Style>
+    </Window.Styles>
 
-        <StackPanel Spacing="15" Margin="30" VerticalAlignment="Center">
-            <TextBlock Text="DebianDialer 2.0" HorizontalAlignment="Center" FontSize="26" FontWeight="Bold" Margin="0,0,0,10" Foreground="White"/>
+    <!-- Panel pozwala na nakładanie kontrolek (TabControl pod spodem, Border na wierzchu) -->
+    <Panel>
+        <TabControl TabStripPlacement="Bottom">
             
-            <Grid ColumnDefinitions="*, Auto">
-                <TextBox Grid.Column="0" Text="{Binding PhoneNumber}" PlaceholderText="Wpisz numer..." FontSize="18" Padding="10" />
-                <Button Grid.Column="1" Content="📖" Click="ImportVcf_Click" FontSize="18" Margin="10,0,0,0" Background="#8E24AA" Foreground="White" VerticalAlignment="Stretch" VerticalContentAlignment="Center" ToolTip.Tip="Importuj kontakty (.vcf)"/>
-            </Grid>
-            
-            <Button Content="Zadzwoń" Command="{Binding DialCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" FontSize="18" Padding="10" Background="#1E88E5" Foreground="White" />
-            <Button Content="Odbierz" Command="{Binding AnswerCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" FontSize="18" Padding="10" Background="#43A047" Foreground="White"/>
-            <Button Content="Odrzuć / Rozłącz" Command="{Binding HangupCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" FontSize="18" Padding="10" Background="#E53935" Foreground="White"/>
+            <!-- Sekcja 1: Telefon -->
+            <TabItem>
+                <TabItem.Header>
+                    <Image Source="/Assets/icon-launcher-phone.png" Width="30" Height="30"/>
+                </TabItem.Header>
+                <StackPanel Margin="20" Spacing="10">
+                    <TextBox Text="{Binding PhoneNumber}" PlaceholderText="Numer telefonu..." />
+                    <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Center">
+                        <Button Content="Odbierz" Command="{Binding AnswerCommand}" Background="Green" Foreground="White"/>
+                        <Button Content="Odrzuć" Command="{Binding RejectCommand}" Background="Red" Foreground="White"/>
+                    </StackPanel>
+                    <Button Content="Włącz Audio" Command="{Binding EnableAudioBridgeCommand}" />
+                </StackPanel>
+            </TabItem>
 
-            <Separator Margin="0,5,0,5" Background="#55FFFFFF"/>
-            <TextBlock Text="Kierowanie dźwięku (kliknij po odebraniu):" FontSize="12" Foreground="#DDDDDD" HorizontalAlignment="Center"/>
+            <!-- Sekcja 2: Kontakty -->
+            <TabItem>
+                <TabItem.Header>
+                    <Image Source="/Assets/icon-launcher-people.png" Width="30" Height="30"/>
+                </TabItem.Header>
+                <StackPanel>
+                    <TextBox Text="{Binding SearchText}" PlaceholderText="Szukaj kontaktu..." Margin="5" />
+                    <Button Content="Odśwież listę" Command="{Binding RefreshContactsCommand}" HorizontalAlignment="Stretch" Margin="5" />
+                    
+                    <ListBox ItemsSource="{Binding Contacts}" Height="400" Background="Transparent">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal" Margin="5" Spacing="10">
+                                    <StackPanel VerticalAlignment="Center" Width="250">
+                                        <TextBlock Text="{Binding Name}" FontWeight="Bold" Foreground="Black" />
+                                        <TextBlock Text="{Binding Number}" FontSize="12" Foreground="Black" Opacity="0.7" />
+                                    </StackPanel>
 
-            <Grid ColumnDefinitions="*, *">
-                <Button Grid.Column="0" Content="🔊 Włącz PC Audio" Command="{Binding EnableAudioBridgeCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="0,0,5,0" FontSize="14" Padding="10" Background="#FB8C00" Foreground="White" ToolTip.Tip="Przełącza dźwięk na mikrofon i głośniki komputera"/>
-                <Button Grid.Column="1" Content="🔇 Wyłącz PC Audio" Command="{Binding DisableAudioBridgeCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="5,0,0,0" FontSize="14" Padding="10" Background="#757575" Foreground="White" ToolTip.Tip="Zwraca dźwięk do telefonu i rozłącza mostek"/>
-            </Grid>
+                                    <Button Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).CallContactCommand}"
+                                            CommandParameter="{Binding Number}"
+                                            Background="Transparent">
+                                        <Image Source="/Assets/phone_call.png" Width="24" Height="24"/>
+                                    </Button>
 
-            <Button Content="🎛 Systemowy Mikser Dźwięku" Command="{Binding OpenSoundSettingsCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" FontSize="14" Padding="10" Background="#546E7A" Foreground="White" Margin="0,10,0,0"/>
-        </StackPanel>
+                                    <Button Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).PrepareSmsCommand}"
+                                            CommandParameter="{Binding Number}"
+                                            Background="Transparent">
+                                        <Image Source="/Assets/message_send.png" Width="24" Height="24"/>
+                                    </Button>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </StackPanel>
+            </TabItem>
+
+            <!-- Sekcja 3: Wiadomości -->
+            <TabItem>
+                <TabItem.Header>
+                    <Image Source="/Assets/icon-launcher-messaging.png" Width="30" Height="30"/>
+                </TabItem.Header>
+                <StackPanel Margin="10">
+                    <TextBox Text="{Binding MessageText}" PlaceholderText="Treść wiadomości..." />
+                    <Button Content="Wyślij" Command="{Binding SendSmsCommand}" />
+                    <Button Content="Odśwież" Command="{Binding LoadMessagesCommand}" />
+                    <ListBox ItemsSource="{Binding Messages}" Height="350" Background="Transparent">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <!-- ZINTEGROWANA POPRAWKA: Grid z podziałem na tekst i przycisk -->
+                                <Grid ColumnDefinitions="*, Auto" Margin="5,10">
+                                    <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                                        <TextBlock Text="{Binding Number}" FontWeight="Bold" />
+                                        <TextBlock Text="{Binding Text}" TextWrapping="Wrap" />
+                                    </StackPanel>
+                                    
+                                    <!-- NOWY PRZYCISK CZATU -->
+                                    <Button Grid.Column="1" Content="Czat" 
+                                            Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).OpenChatCommand}" 
+                                            CommandParameter="{Binding Number}" 
+                                            VerticalAlignment="Center" />
+                                </Grid>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </StackPanel>
+            </TabItem>
+        </TabControl>
+
+        <!-- Popup Wiadomości -->
+        <Border IsVisible="{Binding IsSmsPopupOpen}" 
+                Background="#E0E0E0" 
+                VerticalAlignment="Center" HorizontalAlignment="Center" 
+                Width="350" Height="250" CornerRadius="10" Padding="15"
+                BoxShadow="0 0 10 2 Gray">
+            <StackPanel Spacing="10">
+                <TextBlock Text="Wiadomość do:" FontWeight="Bold"/>
+                <TextBlock Text="{Binding PhoneNumber}"/>
+                <!-- Pole tekstowe na około 5 linii -->
+                <TextBox Text="{Binding MessageText}" 
+                         AcceptsReturn="True" 
+                         Height="100" 
+                         TextWrapping="Wrap" 
+                         PlaceholderText="Wpisz treść wiadomości..."/>
+                
+                <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Right">
+                    <Button Content="Anuluj" Command="{Binding CloseSmsPopupCommand}" />
+                    <Button Content="Wyślij" Command="{Binding SendSmsCommand}" Background="Green" Foreground="White" />
+                </StackPanel>
+            </StackPanel>
+        </Border>
     </Panel>
 </Window>

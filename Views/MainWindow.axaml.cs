@@ -1,7 +1,6 @@
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
-using DebianDialer.Models;
 using DebianDialer.ViewModels;
 using DebianDialer.Services;
 using System;
@@ -11,16 +10,24 @@ namespace DebianDialer.Views;
 
 public partial class MainWindow : Window
 {
+    // Przechowujemy instancję klienta, aby połączenie z D-Bus było stale aktywne
+    private readonly OfonoClient _ofonoClient;
+
     public MainWindow()
     {
         InitializeComponent();
         
-        var ofonoClient = new OfonoClient();
-        var vm = new MainWindowViewModel(ofonoClient);
+        // 1. Inicjalizacja usług - tutaj żyje nasza komunikacja z telefonem
+        _ofonoClient = new OfonoClient();
+        
+        // 2. Tworzymy ViewModel i przekazujemy mu istniejącego klienta
+        var vm = new MainWindowViewModel(_ofonoClient);
+        
+        // 3. Ustawiamy DataContext dla całego okna (wszystkie TabItem to odziedziczą)
         DataContext = vm;
 
+        // 4. Obsługa argumentów startowych (tel:// itd.)
         var args = Environment.GetCommandLineArgs();
-        
         if (args.Length > 1 && args[1] != "--hidden")
         {
             string input = args[1];
@@ -34,8 +41,6 @@ public partial class MainWindow : Window
         }
     }
 
-    // --- NAPRAWA AUTOSTARTU ---
-    // Ta funkcja odpala się dopiero, gdy system operacyjny "zauważy" nasze okno
     protected override void OnOpened(EventArgs e)
     {
         base.OnOpened(e);
@@ -43,37 +48,6 @@ public partial class MainWindow : Window
         if (Array.Exists(args, arg => arg == "--hidden"))
         {
             WindowState = WindowState.Minimized;
-        }
-    }
-
-    private async void ImportVcf_Click(object? sender, RoutedEventArgs e)
-    {
-        var topLevel = TopLevel.GetTopLevel(this);
-        if (topLevel == null) return;
-
-        var files = await topLevel.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
-        {
-            Title = "Wybierz plik z kontaktami (.vcf)",
-            AllowMultiple = false
-        });
-
-        if (files.Count >= 1)
-        {
-            var filePath = files[0].Path.LocalPath;
-            var lines = File.ReadAllLines(filePath);
-            var parser = new VcfParser();
-            var contacts = parser.ParseLines(lines);
-
-            if (contacts.Count > 0)
-            {
-                var dialog = new ContactsWindow(contacts);
-                var selectedContact = await dialog.ShowDialog<Contact>(this);
-
-                if (selectedContact != null && DataContext is MainWindowViewModel vm)
-                {
-                    vm.PhoneNumber = selectedContact.PhoneNumber.Replace(" ", "").Replace("-", "");
-                }
-            }
         }
     }
 }

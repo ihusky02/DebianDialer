@@ -4,3 +4,8 @@ obj/
 .DS_Store
 *.userprefs
 publish/
+# Instalatory
+*.deb
+
+# Dane uwierzytelniające Google API
+credentials.json
